@@ -1,5 +1,7 @@
 # Game Agent Framework
 
+> ⚠️ **Beta Version** - This framework is currently in beta. APIs and features may change.
+
 A modular, extensible Python framework for building AI-powered game agents that connect to game servers via WebSocket. Currently supports Wordle and other word/puzzle games.
 
 ## 📚 Documentation
