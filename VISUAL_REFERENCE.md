@@ -1,0 +1,393 @@
+# Game Agent Framework - Visual Reference
+
+## 🔄 Message Flow Diagram
+
+```
+┌─────────────┐                                    ┌─────────────┐
+│   Game      │                                    │   Your      │
+│   Server    │                                    │   Agent     │
+└──────┬──────┘                                    └──────┬──────┘
+       │                                                  │
+       │  1. Connect (WebSocket)                         │
+       │◄────────────────────────────────────────────────┤
+       │                                                  │
+       │  2. Game Start Message                          │
+       ├─────────────────────────────────────────────────►
+       │  {type: "game start", wordLength: 5, ...}       │
+       │                                                  │
+       │                        ┌─────────────────────────┤
+       │                        │ 3. on_game_start()      │
+       │                        │    Initialize state     │
+       │                        └─────────────────────────►
+       │                                                  │
+       │  4. Command Message (guess)                     │
+       ├─────────────────────────────────────────────────►
+       │  {command: "guess", currentAttempt: 1, ...}     │
+       │                                                  │
+       │                        ┌─────────────────────────┤
+       │                        │ 5. make_move()          │
+       │                        │    Generate guess       │
+       │                        └─────────────────────────►
+       │                                                  │
+       │                        ┌─────────────────────────┤
+       │                        │ 6. build_response()     │
+       │                        │    Create JSON          │
+       │                        └─────────────────────────►
+       │                                                  │
+       │  7. Response (with guess)                       │
+       │◄────────────────────────────────────────────────┤
+       │  {matchId: "...", guess: "arose"}               │
+       │                                                  │
+       │  8. Command Message (with feedback)             │
+       ├─────────────────────────────────────────────────►
+       │  {command: "guess", lastGuess: "arose",         │
+       │   lastResult: ["absent", "correct", ...]}       │
+       │                                                  │
+       │                        ┌─────────────────────────┤
+       │                        │ 9. make_move()          │
+       │                        │    Use feedback         │
+       │                        └─────────────────────────►
+       │                                                  │
+       │  ... (repeat steps 7-9 until game ends) ...    │
+       │                                                  │
+       │  10. Game Result Message                        │
+       ├─────────────────────────────────────────────────►
+       │  {type: "game result", result: "win", ...}      │
+       │                                                  │
+       │                        ┌─────────────────────────┤
+       │                        │ 11. on_game_result()    │
+       │                        │     Update stats        │
+       │                        └─────────────────────────►
+       │                                                  │
+       │  12. Disconnect (or wait for next game)        │
+       │◄────────────────────────────────────────────────┤
+       │                                                  │
+       ▼                                                  ▼
+```
+
+## 🏗️ Class Hierarchy
+
+```
+┌────────────────────────────────────────────────────┐
+│                BaseGameAgent                       │
+│  (Abstract Base Class)                             │
+│                                                    │
+│  Properties:                                       │
+│  ├── config: GameConfig                           │
+│  ├── game_type: GameType                          │
+│  ├── state: AgentState                            │
+│  └── stats: GameStats                             │
+│                                                    │
+│  Core Methods:                                     │
+│  ├── connect_and_run()                            │
+│  ├── run_loop()                                   │
+│  ├── parse_message()                              │
+│  ├── handle_message()                             │
+│  ├── handle_game_start()                          │
+│  ├── handle_game_result()                         │
+│  └── print_stats()                                │
+│                                                    │
+│  Abstract Methods (MUST IMPLEMENT):               │
+│  ├── make_move() ⚠️                                │
+│  └── build_response() ⚠️                           │
+│                                                    │
+│  Optional Hooks:                                   │
+│  ├── on_game_start()                              │
+│  ├── on_game_result()                             │
+│  ├── on_acknowledgement()                         │
+│  ├── on_error()                                   │
+│  ├── on_connected()                               │
+│  └── on_disconnected()                            │
+└────────────┬───────────────────────────────────────┘
+             │
+             ├─────────────────────────────────────────┐
+             │                                         │
+             ▼                                         ▼
+┌────────────────────────────┐      ┌────────────────────────────┐
+│      WordleAgent           │      │      CluedleAgent          │
+│                            │      │                            │
+│  Additional Properties:    │      │  Additional Properties:    │
+│  ├── ai_model             │      │  ├── ai_model              │
+│  ├── use_ai               │      │  ├── clues_received        │
+│  ├── guess_history        │      │  └── guess_history         │
+│  └── feedback_history     │      │                            │
+│                            │      │  Methods:                  │
+│  Methods:                  │      │  ├── _extract_clues()      │
+│  ├── _ai_guess()          │      │  ├── _build_clue_context() │
+│  ├── _fallback_guess()    │      │  ├── _ai_solve_clue()      │
+│  ├── make_move() ✅        │      │  ├── make_move() ✅         │
+│  └── build_response() ✅   │      │  └── build_response() ✅    │
+└────────────────────────────┘      └────────────────────────────┘
+             │
+             ▼
+┌────────────────────────────────────┐
+│   CrosswordStyleCluedleAgent       │
+│   (Further specialization)         │
+│                                    │
+│   Overrides:                       │
+│   └── _build_clue_context()        │
+└────────────────────────────────────┘
+```
+
+## 🔀 State Machine
+
+```
+┌──────────┐
+│   IDLE   │  (Initial state)
+└─────┬────┘
+      │ connect_and_run()
+      ▼
+┌─────────────┐
+│ CONNECTING  │  (Establishing WebSocket connection)
+└─────┬───┬───┘
+      │   │
+      │   └──► Connection Failed ──┐
+      │                            ▼
+      │                    ┌───────────────┐
+      │                    │ DISCONNECTED  │
+      │                    └───────────────┘
+      │
+      │ Connection Success
+      ▼
+┌───────────┐
+│ CONNECTED │  (Connection established, waiting for game)
+└─────┬─────┘
+      │
+      │ Game Start Message
+      ▼
+┌──────────┐
+│ PLAYING  │  (Active game, making moves)
+└─────┬────┘
+      │
+      │ Game Result Message
+      ▼
+┌─────────────┐
+│ GAME_OVER   │  (Game completed, stats updated)
+└─────┬───┬───┘
+      │   │
+      │   └──► keep_alive=False ──┐
+      │                           ▼
+      │                   ┌───────────────┐
+      │                   │ DISCONNECTED  │
+      │                   └───────────────┘
+      │
+      │ keep_alive=True
+      └──► Back to CONNECTED (wait for next game)
+
+┌───────┐
+│ ERROR │  (Error occurred, may attempt reconnect)
+└───────┘
+```
+
+## 📦 Data Flow
+
+```
+1. Server Message (JSON String)
+         │
+         ▼
+2. parse_message()
+         │
+         ├─► ParsedMessage Object
+         │   ├── type: MessageType
+         │   ├── command: GameCommand
+         │   ├── match_id: str
+         │   ├── game_id: str
+         │   ├── otp: str
+         │   ├── word_length: int
+         │   ├── last_guess: str
+         │   ├── last_result: List[str]
+         │   └── metadata: dict
+         │
+         ▼
+3. handle_message()
+         │
+         ├─► MessageType.GAME_START
+         │   └─► handle_game_start()
+         │       └─► on_game_start() [hook]
+         │
+         ├─► MessageType.GAME_RESULT
+         │   └─► handle_game_result()
+         │       └─► on_game_result() [hook]
+         │
+         └─► GameCommand.GUESS
+             │
+             ▼
+         4. make_move(parsed)
+             │
+             ├─► AI Strategy
+             ├─► Heuristic Strategy
+             └─► Fallback Strategy
+             │
+             └─► Move (string)
+                 │
+                 ▼
+         5. build_response(parsed, move)
+             │
+             └─► Response Dict
+                 │
+                 ▼
+         6. JSON.dumps() & ws.send()
+             │
+             └─► Server receives response
+```
+
+## 🎯 Agent Implementation Checklist
+
+### Required (Minimum Viable Agent)
+
+```
+☐ Import BaseGameAgent, GameConfig, GameType
+☐ Create class inheriting from BaseGameAgent
+☐ Implement __init__() with super().__init__()
+☐ Implement make_move() method
+☐ Implement build_response() method
+☐ Create GameConfig instance
+☐ Instantiate your agent
+☐ Run with AgentRunner.run_agent()
+```
+
+### Recommended (Production-Ready Agent)
+
+```
+☐ Add error handling in make_move()
+☐ Add fallback strategies
+☐ Implement on_game_start() hook
+☐ Implement on_game_result() hook
+☐ Add logging for debugging
+☐ Track game history/context
+☐ Add configuration options
+☐ Write unit tests
+☐ Handle edge cases (empty responses, missing fields)
+☐ Add performance monitoring
+```
+
+### Advanced (Competitive Agent)
+
+```
+☐ AI/ML integration
+☐ Structured output parsing
+☐ Multi-strategy decision making
+☐ Context-aware guessing
+☐ Feedback analysis
+☐ Word list management
+☐ Probability calculations
+☐ Adaptive learning
+☐ Performance optimization
+☐ Comprehensive test suite
+```
+
+## 🧩 Component Interaction
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    AgentRunner                          │
+│  ┌───────────────────────────────────────────────────┐  │
+│  │ async def run():                                  │  │
+│  │   try:                                            │  │
+│  │     await agent.connect_and_run()                 │  │
+│  │   except KeyboardInterrupt:                       │  │
+│  │     handle interrupt                              │  │
+│  │   finally:                                        │  │
+│  │     agent.print_stats()                          │  │
+│  └───────────────────────────────────────────────────┘  │
+└────────────────────────┬────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│                  BaseGameAgent                          │
+│  ┌───────────────────────────────────────────────────┐  │
+│  │ async def connect_and_run():                      │  │
+│  │   for attempt in range(max_reconnect_attempts):  │  │
+│  │     async with websockets.connect():             │  │
+│  │       on_connected()                             │  │
+│  │       await run_loop()                           │  │
+│  │   on_disconnected()                              │  │
+│  └───────────────────────────────────────────────────┘  │
+│                         │                               │
+│  ┌──────────────────────▼────────────────────────────┐  │
+│  │ async def run_loop():                             │  │
+│  │   while connected:                                │  │
+│  │     msg = await ws.recv()                         │  │
+│  │     parsed = parse_message(msg)                   │  │
+│  │     response = await handle_message(parsed)       │  │
+│  │     if response:                                  │  │
+│  │       await ws.send(json.dumps(response))         │  │
+│  └───────────────────────────────────────────────────┘  │
+│                         │                               │
+│  ┌──────────────────────▼────────────────────────────┐  │
+│  │ async def handle_message(parsed):                 │  │
+│  │   if parsed.type == GAME_START:                   │  │
+│  │     handle_game_start(parsed)                     │  │
+│  │   elif parsed.type == GAME_RESULT:                │  │
+│  │     handle_game_result(parsed)                    │  │
+│  │   elif parsed.command == GUESS:                   │  │
+│  │     move = await make_move(parsed)  ◄─── YOU      │  │
+│  │     return build_response(parsed, move) ◄─── YOU  │  │
+│  └───────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────┘
+```
+
+## 🎨 Customization Points
+
+```
+BaseGameAgent
+│
+├─► Parsing
+│   └─► parse_message()
+│       └─► Override for custom formats
+│
+├─► Game Logic ⚠️ REQUIRED
+│   ├─► make_move()
+│   │   └─► YOUR STRATEGY HERE
+│   └─► build_response()
+│       └─► YOUR RESPONSE FORMAT HERE
+│
+├─► Lifecycle Hooks
+│   ├─► on_game_start()
+│   ├─► on_game_result()
+│   ├─► on_connected()
+│   ├─► on_disconnected()
+│   ├─► on_acknowledgement()
+│   └─► on_error()
+│
+└─► Utilities
+    ├─► log()
+    ├─► ts()
+    └─► print_stats()
+```
+
+## 📊 Statistics Tracking
+
+```
+GameStats Object
+│
+├─► games_played: int
+│   └─► Incremented in handle_game_start()
+│
+├─► games_won: int
+│   └─► Incremented when result == WIN
+│
+├─► games_lost: int
+│   └─► Incremented when result == LOSS
+│
+├─► total_guesses: int
+│   └─► Incremented in handle_message() for each move
+│
+├─► current_game_guesses: int
+│   └─► Reset on game_start, incremented per move
+│
+├─► start_time: datetime
+│   └─► Set in handle_game_start()
+│
+└─► end_time: datetime
+    └─► Set in handle_game_result()
+
+Calculated Metrics:
+├─► Win Rate = (games_won / games_played) × 100%
+├─► Avg Guesses = total_guesses / games_played
+└─► Game Duration = end_time - start_time
+```
+
+---
+
+**Use these diagrams as reference when building your agent!** 📖

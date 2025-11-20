@@ -1,0 +1,13 @@
+[project]
+name = "python-bot"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "ipykernel>=7.1.0",
+    "jupyterlab>=4.4.10",
+    "openai>=2.7.1",
+    "python-dotenv>=1.2.1",
+    "websockets>=15.0.1",
+]
