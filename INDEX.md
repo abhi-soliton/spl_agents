@@ -55,7 +55,6 @@ wordle/
 ├── 🎯 CORE FILES (Use these to build agents)
 │   ├── game_agent_framework.py      ← Core framework (import this)
 │   ├── wordle_agent_example.py      ← Working Wordle agent
-│   ├── cluedle_agent_example.py     ← Working Cluedle agent
 │   ├── run_agent.py                 ← Run agents from here
 │   └── agent_testing.py             ← Test your agents
 │
@@ -99,7 +98,6 @@ Done! Watch it play games automatically.
 
 2. **Study the examples** (30 min)
    - Read `wordle_agent_example.py`
-   - Read `cluedle_agent_example.py`
 
 3. **Test without server** (15 min)
    - Run `python agent_testing.py`
@@ -206,7 +204,6 @@ await tester.run_all_tests()
 ### Code
 - ✅ 520 lines of core framework
 - ✅ 240 lines Wordle agent (complete)
-- ✅ 200 lines Cluedle agent (complete)
 - ✅ 300 lines testing framework
 - ✅ Ready-to-run scripts
 
@@ -308,14 +305,14 @@ AgentRunner.run_agent(MyAgent(GameConfig(ws_url="ws://localhost:2025")))
 You have a **complete, production-ready framework** with:
 
 - ✅ Core framework (520 lines)
-- ✅ 2 example agents (Wordle + Cluedle)
+- ✅ Example Wordle agent
 - ✅ Testing framework
 - ✅ 5 documentation files
 - ✅ Quick start scripts
 - ✅ Full type safety
 - ✅ AI integration
 
-**Total: 1000+ lines of code + comprehensive docs**
+**Total: 800+ lines of code + comprehensive docs**
 
 ---
 

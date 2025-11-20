@@ -181,7 +181,6 @@ AgentRunner.run_agent(agent)
 └────────────┬───────────────────────────┘
              │
              ├── WordleAgent (Example)
-             ├── CluedleAgent (Example)
              └── YourCustomAgent (Your implementation)
 ```
 

@@ -2,7 +2,7 @@
 
 ## 📦 What You Have
 
-A **production-ready, modular Python framework** for building AI-powered game agents that connect to game servers via WebSocket. Perfect for Wordle, Cluedle, and similar word/puzzle games.
+A **production-ready, modular Python framework** for building AI-powered game agents that connect to game servers via WebSocket. Perfect for Wordle and similar word/puzzle games.
 
 ## ✨ Key Features
 
@@ -38,7 +38,6 @@ A **production-ready, modular Python framework** for building AI-powered game ag
 wordle/
 ├── game_agent_framework.py           ⭐ Core framework (520 lines)
 ├── wordle_agent_example.py           📝 Wordle implementation (240 lines)
-├── cluedle_agent_example.py          🧩 Cluedle implementation (200 lines)
 ├── run_agent.py                      🚀 Quick start script
 ├── agent_testing.py                  🧪 Testing framework (300 lines)
 ├── AGENT_FRAMEWORK_README.md         📖 Complete documentation
@@ -74,17 +73,6 @@ wordle/
 - Token usage logging
 
 **Ready to use out of the box!**
-
-### Cluedle Agent (`cluedle_agent_example.py`)
-
-**What it provides:**
-- Clue-based puzzle solving agent
-- Clue extraction and context building
-- AI-powered reasoning
-- Crossword-style variant
-- Confidence scoring
-
-**Easily adaptable to your game!**
 
 ### Testing Framework (`agent_testing.py`)
 
@@ -165,7 +153,7 @@ python agent_testing.py
 ### 1. Enums (Type Safety)
 
 ```python
-GameType       # WORDLE, CLUEDLE, CUSTOM
+GameType       # WORDLE, CUSTOM
 MessageType    # GAME_START, GAME_RESULT, COMMAND, etc.
 GameCommand    # GUESS, SOLVE, HINT
 GameResult     # WIN, LOSS, TIMEOUT, ERROR

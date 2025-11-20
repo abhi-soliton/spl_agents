@@ -113,6 +113,7 @@ def build_word_prompt(
         exist_str = ", ".join(f"'{l}'" for l in letters_exist)
         parts.append(f"  - The word MUST contain all of these letters: {exist_str}")
         parts.append(f"  - These letters can appear in any position (except positions already fixed above)")
+        parts.append(f"  - These letters may repeat 2 or more times")
         parts.append("")
         constraint_num += 1
 
@@ -188,6 +189,7 @@ class WordleAgent(BaseGameAgent):
         self.letters_exist: list[str] = []
         self.letters_not_exist: set[str] = set()
         self.exact_positions: Dict[int, str] = {}
+
         
         # Track game state for AI context
         self.guess_history: list[str] = []
@@ -305,28 +307,31 @@ class WordleAgent(BaseGameAgent):
         return self.alphabet[:length]
 
     async def make_move(self, parsed: ParsedMessage) -> Optional[str]:
+        guess = await self._make_move(parsed)
+        self.guess_history.append(guess)
+        return guess
+
+    async def _make_move(self, parsed: ParsedMessage) -> Optional[str]:
         """Generate the next Wordle guess"""
         if not self.guess_history:
             word = "aioue"
-            self.guess_history.append(word)
             return word
         self._update_feedback(parsed)
         print("Letters exist:", self.letters_exist)
         print("Letters not exist:", self.letters_not_exist)
         print("Exact positions:", self.exact_positions)
         if self.use_ai:
-            if len(self.letters_exist) >= 4 or len(self.guess_history) == 5:
-                words = await self._generate_words(20, 1)
+            if len(self.letters_exist) >= parsed.word_length - 1 or len(self.guess_history) == 5:
+                words = await self._generate_words(1, parsed.word_length)
                 if not words:
                     self.log("⚠️ AI guess failed; using fallback", "🔄")
                     fallback = self._fallback_guess(parsed)
                     self.log(f"✳️ Using fallback guess: {fallback}", "🔄")
                     return fallback
                 return words[0]
-            words = await self._generate_words(20, 5)
+            words = await self._generate_words(20, parsed.word_length)
             if words:
                 guess = generate_word_no_repeats(words, banned=(self.letters_not_exist | set(self.letters_exist)))
-                self.guess_history.append(guess)
                 return guess
             self.log("⚠️ AI guess failed; using fallback", "🔄")
         

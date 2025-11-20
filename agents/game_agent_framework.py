@@ -1,5 +1,5 @@
 """
-Game Agent Framework - Modular Template for Wordle, Cluedle, and other games
+Game Agent Framework - Modular Template for Wordle and other games
 
 This framework provides:
 - Base agent class with connection and message handling
@@ -25,7 +25,6 @@ import websockets
 class GameType(Enum):
     """Supported game types"""
     WORDLE = "wordle"
-    CLUEDLE = "cluedle"
     CUSTOM = "custom"
 
 

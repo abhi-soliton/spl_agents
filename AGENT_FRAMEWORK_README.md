@@ -1,6 +1,6 @@
 # Game Agent Framework
 
-A modular, extensible Python framework for building AI game agents that connect to game servers via WebSocket. Designed for Wordle, Cluedle, and other word/puzzle games.
+A modular, extensible Python framework for building AI game agents that connect to game servers via WebSocket. Designed for Wordle and other word/puzzle games.
 
 ## 🎯 Features
 
@@ -60,17 +60,6 @@ agent = WordleAgent(config=config, use_ai=True)
 AgentRunner.run_agent(agent)
 ```
 
-### Using the Cluedle Agent
-
-```python
-from cluedle_agent_example import CluedleAgent
-from game_agent_framework import GameConfig, AgentRunner
-
-config = GameConfig(ws_url="ws://localhost:2025")
-agent = CluedleAgent(config=config, use_ai=True)
-AgentRunner.run_agent(agent)
-```
-
 ## 🏗️ Architecture
 
 ### Core Components
@@ -87,7 +76,7 @@ The foundation for all game agents. Handles:
 #### 2. **Enums** (Type Safety)
 
 ```python
-GameType       # WORDLE, CLUEDLE, CUSTOM
+GameType       # WORDLE, CUSTOM
 MessageType    # GAME_START, GAME_RESULT, COMMAND, etc.
 GameCommand    # GUESS, SOLVE, HINT
 GameResult     # WIN, LOSS, TIMEOUT, ERROR
@@ -368,7 +357,6 @@ class UniversalAgent(BaseGameAgent):
         super().__init__(config, GameType.CUSTOM)
         self.game_handlers = {
             "wordle": WordleHandler(),
-            "cluedle": CluedleHandler(),
         }
     
     async def make_move(self, parsed: ParsedMessage) -> Optional[str]:
@@ -423,7 +411,6 @@ This framework is provided as a template for educational and competitive program
 ## 🎮 Supported Games
 
 - ✅ **Wordle**: Word guessing with letter position feedback
-- ✅ **Cluedle**: Clue-based word/phrase guessing
 - 🔧 **Custom**: Extend for any game with similar mechanics
 
 ---
