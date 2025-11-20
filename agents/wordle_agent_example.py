@@ -316,7 +316,7 @@ class WordleAgent(BaseGameAgent):
         print("Exact positions:", self.exact_positions)
         if self.use_ai:
             if len(self.letters_exist) >= 4 or len(self.guess_history) == 5:
-                words = await self._generate_words(20, 5)
+                words = await self._generate_words(20, 1)
                 if not words:
                     self.log("⚠️ AI guess failed; using fallback", "🔄")
                     fallback = self._fallback_guess(parsed)
