@@ -66,6 +66,7 @@ def build_word_prompt(
         letters_exist=None,
         letters_not_exist=None,
         exact_positions=None,
+        wrong_positions=None,
         word_length=None,
         count=20,
         previous_guesses=None
@@ -76,6 +77,7 @@ def build_word_prompt(
     letters_exist: list of letters that must appear somewhere in the word
     letters_not_exist: list of letters that must NOT appear anywhere
     exact_positions: dict mapping position -> letter (positions are 1-based)
+    wrong_positions: dict mapping letter -> set of positions where it can't be (positions are 1-based)
     word_length: int specifying the fixed word length
     count: number of words to generate
     previous_guesses: list of words already guessed (to avoid repetition)
@@ -84,6 +86,7 @@ def build_word_prompt(
     letters_exist = letters_exist or []
     letters_not_exist = letters_not_exist or []
     exact_positions = exact_positions or {}
+    wrong_positions = wrong_positions or {}
     previous_guesses = previous_guesses or []
 
     parts = []
@@ -114,6 +117,15 @@ def build_word_prompt(
         parts.append(f"  - The word MUST contain all of these letters: {exist_str}")
         parts.append(f"  - These letters can appear in any position (except positions already fixed above)")
         parts.append(f"  - These letters may repeat 2 or more times")
+        
+        # Add wrong position constraints for each letter
+        if wrong_positions:
+            parts.append(f"  - Position restrictions for required letters:")
+            for letter, positions in sorted(wrong_positions.items()):
+                if letter in letters_exist:
+                    pos_str = ", ".join(str(p) for p in sorted(positions))
+                    parts.append(f"    × '{letter}' CANNOT be at position(s): {pos_str}")
+        
         parts.append("")
         constraint_num += 1
 
@@ -129,7 +141,7 @@ def build_word_prompt(
     letters_may_exist = set("abcdefghijklmnopqrstuvwxyz") - set(letters_not_exist) - set(letters_exist) - set(exact_positions.values())
     if letters_may_exist:
         may_exist_str = ", ".join(f"'{l}'" for l in sorted(letters_may_exist))
-        parts.append(f"CONSTRAINT {constraint_num}: Optional Letters")
+        parts.append(f"CONSTRAINT {constraint_num}: New Letters that can present in the word")
         parts.append(f"  - The word MAY use any of: {may_exist_str}")
         parts.append("")
         constraint_num += 1
@@ -189,6 +201,7 @@ class WordleAgent(BaseGameAgent):
         self.letters_exist: list[str] = []
         self.letters_not_exist: set[str] = set()
         self.exact_positions: Dict[int, str] = {}
+        self.wrong_positions: Dict[str, set[int]] = {}  # letter -> set of positions where it can't be
 
         
         # Track game state for AI context
@@ -222,6 +235,10 @@ class WordleAgent(BaseGameAgent):
             elif result == "present":
                 if letter not in self.letters_exist:
                     self.letters_exist.append(letter)
+                # Track wrong position
+                if letter not in self.wrong_positions:
+                    self.wrong_positions[letter] = set()
+                self.wrong_positions[letter].add(idx)
             elif result == "absent":
                 # Only add to not_exist if not already confirmed elsewhere
                 if letter not in self.letters_exist and letter not in self.exact_positions.values():
@@ -251,6 +268,7 @@ class WordleAgent(BaseGameAgent):
                 letters_exist=self.letters_exist,
                 letters_not_exist=self.letters_not_exist,
                 exact_positions=self.exact_positions,
+                wrong_positions=self.wrong_positions,
                 word_length=word_length,
                 count=count,
                 previous_guesses=self.guess_history,
@@ -279,6 +297,8 @@ class WordleAgent(BaseGameAgent):
             words = [word.strip() for word in words if word.strip()]
             # remove non alphabetic letters from each word, as 1. are added
             words = [''.join(filter(str.isalpha, word)) for word in words if len(word) == word_length]
+            # remove unmatched word length
+            words = [word for word in words if len(word) == word_length]
 
             self.log(f"🤖 AI generated words: {words}", "💡")
             
@@ -365,6 +385,7 @@ class WordleAgent(BaseGameAgent):
         self.letters_exist = []
         self.letters_not_exist = set()
         self.exact_positions = {}
+        self.wrong_positions = {}
         self.guess_history = []
         self.feedback_history = []
 

@@ -168,25 +168,29 @@ class AgentEvaluator:
     Evaluates agent performance against test words using a mock server.
     """
     
-    def __init__(self, agent_factory: callable, test_words: List[str]):
+    def __init__(self, agent_factory: callable, test_words: List[str], max_concurrent: int = 5):
         """
         Args:
             agent_factory: Callable that returns a new agent instance
             test_words: List of words to test
+            max_concurrent: Maximum number of concurrent evaluations
         """
         self.agent_factory = agent_factory
         self.test_words = test_words
+        self.max_concurrent = max_concurrent
         self.results: List[EvaluationResult] = []
+        self._semaphore: Optional[asyncio.Semaphore] = None
     
     async def evaluate_word(self, word: str) -> EvaluationResult:
         """Evaluate agent performance on a single word"""
-        print(f"\n{'='*60}")
-        print(f"🎯 Testing word: {word.upper()}")
-        print(f"{'='*60}")
-        
-        # Create fresh agent and mock server for this word
-        agent = self.agent_factory()
-        mock_server = MockGameServer([word])
+        async with self._semaphore:
+            print(f"\n{'='*60}")
+            print(f"🎯 Testing word: {word.upper()}")
+            print(f"{'='*60}")
+            
+            # Create fresh agent and mock server for this word
+            agent = self.agent_factory()
+            mock_server = MockGameServer([word])
         
         # Start game
         game_start_msg = mock_server.start_game(word)
@@ -262,33 +266,37 @@ class AgentEvaluator:
         if parsed_end:
             agent.handle_game_result(parsed_end)
         
-        result = EvaluationResult(
-            word=word,
-            won=mock_server.current_session.won,
-            attempts=len(guesses),
-            guesses=guesses,
-            success=success,
-        )
-        
-        # Print result
-        if result.won:
-            print(f"✅ WON in {result.attempts} attempts!")
-        else:
-            print(f"❌ LOST - Failed to guess '{word}' in {result.attempts} attempts")
-        
-        return result
+            result = EvaluationResult(
+                word=word,
+                won=mock_server.current_session.won,
+                attempts=len(guesses),
+                guesses=guesses,
+                success=success,
+            )
+            
+            # Print result
+            if result.won:
+                print(f"✅ WON in {result.attempts} attempts!")
+            else:
+                print(f"❌ LOST - Failed to guess '{word}' in {result.attempts} attempts")
+            
+            return result
     
     async def run_evaluation(self) -> Dict[str, Any]:
-        """Run evaluation on all test words"""
+        """Run evaluation on all test words concurrently"""
         print("="*60)
         print("🧪 AGENT EVALUATION SUITE")
         print("="*60)
         print(f"Test words: {', '.join(self.test_words)}")
+        print(f"Max concurrent evaluations: {self.max_concurrent}")
         print()
         
-        for word in self.test_words:
-            result = await self.evaluate_word(word)
-            self.results.append(result)
+        # Create semaphore for concurrency control
+        self._semaphore = asyncio.Semaphore(self.max_concurrent)
+        
+        # Run all evaluations concurrently
+        tasks = [self.evaluate_word(word) for word in self.test_words]
+        self.results = await asyncio.gather(*tasks)
         
         # Print summary
         self.print_summary()
@@ -370,12 +378,12 @@ async def run_evaluation_example():
         )
         return WordleAgent(
             config=config,
-            ai_model="gpt-4o",
+            ai_model="gpt-4.1-mini",
             use_ai=True,  # Set to False for faster testing without AI
         )
     
-    # Run evaluation
-    evaluator = AgentEvaluator(create_agent, test_words)
+    # Run evaluation with max 5 concurrent games
+    evaluator = AgentEvaluator(create_agent, test_words, max_concurrent=5)
     stats = await evaluator.run_evaluation()
     
     print(f"\n🎉 Evaluation complete!")
