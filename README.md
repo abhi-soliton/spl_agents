@@ -1,6 +1,6 @@
 # Game Agent Framework
 
-> ⚠️ **Beta Version** - This framework is currently in beta. APIs and features may change.
+> ⚠️ **Beta Version** - This framework is currently in beta. APIs and features may change. (Currently this is compatible with Wordle Only.)
 
 A modular, extensible Python framework for building AI-powered game agents that connect to game servers via WebSocket. Currently supports Wordle and other word/puzzle games.
 
@@ -35,6 +35,11 @@ A modular, extensible Python framework for building AI-powered game agents that 
 3. **Run the Wordle Agent**
    ```bash
    uv run .\agents\wordle_agent_example.py
+   ```
+
+4. **Run the Wordle Agent Evaluation**
+   ```bash
+   uv run .\agents\agent_eval_runner.py
    ```
 
 ## 🎯 Features

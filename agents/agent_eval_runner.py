@@ -370,7 +370,7 @@ async def run_evaluation_example():
         )
         return WordleAgent(
             config=config,
-            ai_model="gpt-4.1-mini",
+            ai_model="gpt-4o",
             use_ai=True,  # Set to False for faster testing without AI
         )
     

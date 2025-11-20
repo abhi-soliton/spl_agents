@@ -22,6 +22,7 @@ A modular, extensible Python framework for building AI game agents that connect 
 - [Examples](#examples)
 - [Configuration](#configuration)
 - [Advanced Usage](#advanced-usage)
+- [Agent Evaluation & Testing](#agent-evaluation--testing)
 
 ## 🚀 Installation
 
@@ -248,6 +249,29 @@ class SmartWordleAgent(BaseGameAgent):
         pass
 ```
 
+### Example 3: Evaluating Your Agent
+
+```python
+from agent_eval_runner import AgentEvaluator
+import asyncio
+
+# Test your agent against specific words
+async def evaluate_my_agent():
+    test_words = ["crane", "slate", "apple", "world", "trick"]
+    
+    def create_agent():
+        config = GameConfig(ws_url="ws://mock:9999")
+        return MyCustomAgent(config)
+    
+    evaluator = AgentEvaluator(create_agent, test_words)
+    stats = await evaluator.run_evaluation()
+    
+    print(f"Win Rate: {stats['win_rate']:.1f}%")
+    print(f"Average Attempts: {stats['avg_attempts']:.1f}")
+
+asyncio.run(evaluate_my_agent())
+```
+
 
 ## ⚙️ Configuration
 
@@ -307,6 +331,62 @@ print(f"Avg guesses: {agent.stats.total_guesses / agent.stats.games_played:.1f}"
 
 Statistics are automatically printed when the agent disconnects.
 
+## 🧪 Agent Evaluation & Testing
+
+The framework includes a comprehensive evaluation system for testing agents against known words without requiring a live server.
+
+### AgentEvaluator
+
+Test your agent's performance on a controlled set of words using the `AgentEvaluator`:
+
+```python
+from agent_eval_runner import AgentEvaluator
+from wordle_agent_example import WordleAgent
+from game_agent_framework import GameConfig
+
+# Define test words
+test_words = ["crane", "slate", "apple", "world", "trick"]
+
+# Create agent factory
+def create_agent():
+    config = GameConfig(ws_url="ws://mock:9999")
+    return WordleAgent(config=config, use_ai=True)
+
+# Run evaluation
+evaluator = AgentEvaluator(create_agent, test_words)
+stats = await evaluator.run_evaluation()
+
+print(f"Win rate: {stats['win_rate']:.1f}%")
+print(f"Avg attempts: {stats['avg_attempts']:.1f}")
+```
+
+### MockGameServer
+
+The evaluation system uses a `MockGameServer` that:
+- Simulates complete game sessions locally
+- Provides Wordle-style feedback (correct/present/absent)
+- Tracks guesses and attempts
+- Determines win/loss outcomes
+
+### Evaluation Results
+
+Get detailed results for each word:
+
+```python
+stats = await evaluator.run_evaluation()
+
+for result in stats['results']:
+    print(f"{result['word']}: {'✅' if result['won'] else '❌'}")
+    print(f"  Attempts: {result['attempts']}")
+    print(f"  Guesses: {', '.join(result['guesses'])}")
+```
+
+### Benefits of Evaluation
+
+- **Fast Testing**: No network latency or server dependency
+- **Reproducible**: Test against the same words consistently
+- **Debugging**: Detailed output for each guess and feedback
+- **Performance Metrics**: Win rates, average attempts, and success tracking
 
 ## 🎮 Supported Games
 
