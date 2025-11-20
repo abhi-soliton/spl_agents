@@ -354,7 +354,12 @@ async def run_evaluation_example():
     from wordle_agent_example import WordleAgent
     
     # Test words
-    test_words = ["kanal", "apple", "world", "crane", "slate"]
+    test_words = [
+        "kanal", "apple", "world", "crane", "slate",
+        # "iring", "vibes", "happy", "comas", "colos",
+        # "loved", "frown", "glide", "plumb", "trick",
+        # "frost", "grape", "blush", "charm", "dwell",
+    ]
     
     # Agent factory
     def create_agent():
@@ -365,7 +370,7 @@ async def run_evaluation_example():
         )
         return WordleAgent(
             config=config,
-            ai_model="gpt-4o",
+            ai_model="gpt-4.1",
             use_ai=True,  # Set to False for faster testing without AI
         )
     

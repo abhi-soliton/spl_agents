@@ -100,33 +100,23 @@
 │  └── on_disconnected()                            │
 └────────────┬───────────────────────────────────────┘
              │
-             ├─────────────────────────────────────────┐
-             │                                         │
-             ▼                                         ▼
-┌────────────────────────────┐      ┌────────────────────────────┐
-│      WordleAgent           │      │      CluedleAgent          │
-│                            │      │                            │
-│  Additional Properties:    │      │  Additional Properties:    │
-│  ├── ai_model             │      │  ├── ai_model              │
-│  ├── use_ai               │      │  ├── clues_received        │
-│  ├── guess_history        │      │  └── guess_history         │
-│  └── feedback_history     │      │                            │
-│                            │      │  Methods:                  │
-│  Methods:                  │      │  ├── _extract_clues()      │
-│  ├── _ai_guess()          │      │  ├── _build_clue_context() │
-│  ├── _fallback_guess()    │      │  ├── _ai_solve_clue()      │
-│  ├── make_move() ✅        │      │  ├── make_move() ✅         │
-│  └── build_response() ✅   │      │  └── build_response() ✅    │
-└────────────────────────────┘      └────────────────────────────┘
              │
              ▼
-┌────────────────────────────────────┐
-│   CrosswordStyleCluedleAgent       │
-│   (Further specialization)         │
-│                                    │
-│   Overrides:                       │
-│   └── _build_clue_context()        │
-└────────────────────────────────────┘
+┌────────────────────────────┐
+│      WordleAgent           │
+│                            │
+│  Additional Properties:    │
+│  ├── ai_model             │
+│  ├── use_ai               │
+│  ├── guess_history        │
+│  └── feedback_history     │
+│                            │
+│  Methods:                  │
+│  ├── _ai_guess()          │
+│  ├── _fallback_guess()    │
+│  ├── make_move() ✅        │
+│  └── build_response() ✅   │
+└────────────────────────────┘
 ```
 
 ## 🔀 State Machine
@@ -244,36 +234,6 @@
 ☐ Create GameConfig instance
 ☐ Instantiate your agent
 ☐ Run with AgentRunner.run_agent()
-```
-
-### Recommended (Production-Ready Agent)
-
-```
-☐ Add error handling in make_move()
-☐ Add fallback strategies
-☐ Implement on_game_start() hook
-☐ Implement on_game_result() hook
-☐ Add logging for debugging
-☐ Track game history/context
-☐ Add configuration options
-☐ Write unit tests
-☐ Handle edge cases (empty responses, missing fields)
-☐ Add performance monitoring
-```
-
-### Advanced (Competitive Agent)
-
-```
-☐ AI/ML integration
-☐ Structured output parsing
-☐ Multi-strategy decision making
-☐ Context-aware guessing
-☐ Feedback analysis
-☐ Word list management
-☐ Probability calculations
-☐ Adaptive learning
-☐ Performance optimization
-☐ Comprehensive test suite
 ```
 
 ## 🧩 Component Interaction

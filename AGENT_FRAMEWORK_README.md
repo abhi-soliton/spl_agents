@@ -248,47 +248,6 @@ class SmartWordleAgent(BaseGameAgent):
         pass
 ```
 
-### Example 3: Multi-Strategy Agent
-
-```python
-class HybridAgent(BaseGameAgent):
-    """Combines multiple strategies with fallbacks"""
-    
-    def __init__(self, config: GameConfig):
-        super().__init__(config, GameType.WORDLE)
-        self.strategies = [
-            self._ai_strategy,
-            self._wordlist_strategy,
-            self._alphabet_strategy,
-        ]
-    
-    async def make_move(self, parsed: ParsedMessage) -> Optional[str]:
-        # Try each strategy until one succeeds
-        for strategy in self.strategies:
-            move = await strategy(parsed)
-            if move:
-                return move
-        return None
-    
-    async def _ai_strategy(self, parsed: ParsedMessage) -> Optional[str]:
-        try:
-            # AI logic...
-            pass
-        except Exception:
-            return None
-    
-    async def _wordlist_strategy(self, parsed: ParsedMessage) -> Optional[str]:
-        # Use pre-loaded word list
-        pass
-    
-    async def _alphabet_strategy(self, parsed: ParsedMessage) -> Optional[str]:
-        # Fallback to alphabet
-        return "abcde"[:parsed.word_length or 5]
-    
-    def build_response(self, parsed: ParsedMessage, move: Optional[str]) -> Optional[Dict[str, Any]]:
-        # ... standard response building ...
-        pass
-```
 
 ## ⚙️ Configuration
 
@@ -333,41 +292,6 @@ def parse_message(self, msg: str) -> Optional[ParsedMessage]:
     return parsed
 ```
 
-### State-Based Logic
-
-Use the agent state for complex behaviors:
-
-```python
-async def make_move(self, parsed: ParsedMessage) -> Optional[str]:
-    if self.state == AgentState.PLAYING:
-        if self.stats.current_game_guesses < 2:
-            return await self._aggressive_strategy(parsed)
-        else:
-            return await self._conservative_strategy(parsed)
-    return None
-```
-
-### Multiple Game Support
-
-Create agents that handle multiple game types:
-
-```python
-class UniversalAgent(BaseGameAgent):
-    def __init__(self, config: GameConfig):
-        super().__init__(config, GameType.CUSTOM)
-        self.game_handlers = {
-            "wordle": WordleHandler(),
-        }
-    
-    async def make_move(self, parsed: ParsedMessage) -> Optional[str]:
-        game_type = parsed.metadata.get("gameType", "").lower()
-        handler = self.game_handlers.get(game_type)
-        
-        if handler:
-            return await handler.make_move(parsed)
-        return None
-```
-
 ## 📊 Statistics & Monitoring
 
 Access statistics at any time:
@@ -383,30 +307,6 @@ print(f"Avg guesses: {agent.stats.total_guesses / agent.stats.games_played:.1f}"
 
 Statistics are automatically printed when the agent disconnects.
 
-## 🐛 Debugging
-
-Enable verbose logging in your agent:
-
-```python
-class DebugAgent(BaseGameAgent):
-    def log(self, message: str, emoji: str = "ℹ️"):
-        # Add extra debug info
-        super().log(f"[{self.state.value}] {message}", emoji)
-```
-
-## 🤝 Contributing
-
-To add a new game type:
-
-1. Create a new enum value in `GameType`
-2. Create a new agent class inheriting from `BaseGameAgent`
-3. Implement `make_move()` and `build_response()`
-4. Add any game-specific enums or data classes
-5. Document your agent with examples
-
-## 📝 License
-
-This framework is provided as a template for educational and competitive programming purposes.
 
 ## 🎮 Supported Games
 

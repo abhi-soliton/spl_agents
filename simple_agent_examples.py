@@ -12,107 +12,7 @@ from openai import OpenAI
 from dotenv import load_dotenv
 
 
-# ==================== Example 1: Simple Cluedle Agent ====================
-
-class SimpleCluedleAgent(SimpleGameAgent):
-    """
-    Cluedle Agent - Answer questions based on clues.
-    
-    For non-programmers: This is ALL the code you need!
-    """
-    
-    def __init__(self, config: GameConfig):
-        super().__init__(config, GameType.CLUEDLE)
-        # Add any variables you need
-        self.all_clues = []
-    
-    def on_game_started(self, message: GameMessage):
-        """Game started - get ready"""
-        self.log("🧩 New Cluedle game starting!")
-        self.all_clues = []
-    
-    def on_clue_received(self, clue: str, message: GameMessage):
-        """You got a clue - save it"""
-        self.all_clues.append(clue)
-        self.log(f"📝 Saved clue: {clue}")
-    
-    async def make_move(self, message: GameMessage) -> Optional[Any]:
-        """Return your answer"""
-        # Simple logic: look for keywords in clues
-        combined_clues = " ".join(self.all_clues).lower()
-        
-        if "claude" in combined_clues and "ai" in combined_clues:
-            return "anthropic"
-        elif "chatgpt" in combined_clues or "gpt" in combined_clues:
-            return "openai"
-        elif "gemini" in combined_clues or "bard" in combined_clues:
-            return "google"
-        
-        # Default guess
-        return "anthropic"
-    
-    def on_game_ended(self, message: GameMessage):
-        """Game ended - show results"""
-        self.log(f"✅ Game over! I had {len(self.all_clues)} clues")
-
-
-# ==================== Example 2: AI-Powered Cluedle Agent ====================
-
-class AICluedleAgent(SimpleGameAgent):
-    """
-    Cluedle Agent with OpenAI - Let AI solve it!
-    """
-    
-    def __init__(self, config: GameConfig, use_ai: bool = True):
-        super().__init__(config, GameType.CLUEDLE)
-        self.use_ai = use_ai
-        self.ai_client = None
-        
-        load_dotenv()
-        if use_ai and os.getenv("OPENAI_API_KEY"):
-            self.ai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-    
-    def on_game_started(self, message: GameMessage):
-        self.log("🧩 AI Cluedle agent ready!")
-    
-    def on_clue_received(self, clue: str, message: GameMessage):
-        self.log(f"🤖 AI analyzing clue: {clue}")
-    
-    async def make_move(self, message: GameMessage) -> Optional[Any]:
-        """Use AI to solve based on all clues"""
-        if not self.ai_client or not self.clues:
-            return "anthropic"
-        
-        # Build prompt with all clues
-        prompt = "Based on these clues, what is the answer?\n\n"
-        for i, clue in enumerate(self.clues, 1):
-            prompt += f"Clue {i}: {clue}\n"
-        prompt += "\nProvide only the answer, nothing else."
-        
-        try:
-            response = self.ai_client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": "You are great at solving riddles and clues."},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=50,
-                temperature=0.7,
-            )
-            
-            answer = response.choices[0].message.content.strip().lower()
-            self.log(f"🤖 AI suggests: {answer}")
-            return answer
-            
-        except Exception as e:
-            self.log(f"⚠️ AI failed: {e}")
-            return "anthropic"
-    
-    def on_game_ended(self, message: GameMessage):
-        self.log("🎯 Game complete!")
-
-
-# ==================== Example 3: Simple Wordle Agent ====================
+# ==================== Example 1: Simple Wordle Agent ====================
 
 class SimpleWordleAgent(SimpleGameAgent):
     """
@@ -272,34 +172,26 @@ if __name__ == "__main__":
     print("=" * 60)
     print("🎮 Simple Game Agents")
     print("=" * 60)
-    print("1. Simple Cluedle Agent")
-    print("2. AI-Powered Cluedle Agent")
-    print("3. Simple Wordle Agent")
-    print("4. 2D Grid Game Agent")
-    print("5. Custom Game Agent")
+    print("1. Simple Wordle Agent")
+    print("2. 2D Grid Game Agent")
+    print("3. Custom Game Agent")
     print("=" * 60)
     
-    choice = input("Choose agent (1-5): ").strip()
+    choice = input("Choose agent (1-3): ").strip()
     
     if choice == "1":
-        agent = SimpleCluedleAgent(config)
-        print("🧩 Running Simple Cluedle Agent...")
-    elif choice == "2":
-        agent = AICluedleAgent(config, use_ai=True)
-        print("🤖 Running AI Cluedle Agent...")
-    elif choice == "3":
         agent = SimpleWordleAgent(config)
         print("🎮 Running Simple Wordle Agent...")
-    elif choice == "4":
+    elif choice == "2":
         agent = Simple2DGridAgent(config)
         print("🎲 Running 2D Grid Agent...")
-    elif choice == "5":
+    elif choice == "3":
         agent = CustomGameAgent(config)
         print("🎯 Running Custom Agent...")
     else:
-        # Default to Cluedle
-        agent = SimpleCluedleAgent(config)
-        print("🧩 Running Simple Cluedle Agent (default)...")
+        # Default to Wordle
+        agent = SimpleWordleAgent(config)
+        print("🎮 Running Simple Wordle Agent (default)...")
     
     print("=" * 60)
     AgentRunner.run_agent(agent)

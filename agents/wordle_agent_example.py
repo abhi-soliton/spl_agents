@@ -321,7 +321,7 @@ class WordleAgent(BaseGameAgent):
         print("Letters not exist:", self.letters_not_exist)
         print("Exact positions:", self.exact_positions)
         if self.use_ai:
-            if len(self.letters_exist) >= parsed.word_length - 1 or len(self.guess_history) == 5:
+            if len(self.guess_history) == 3 or len(self.letters_exist) >= parsed.word_length - 1 or len(self.guess_history) >= 5:
                 words = await self._generate_words(1, parsed.word_length)
                 if not words:
                     self.log("⚠️ AI guess failed; using fallback", "🔄")

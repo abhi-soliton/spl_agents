@@ -20,12 +20,14 @@ OPENAI_API_KEY = <your_open_ai_api_key>
 ```
 - Add the above line to the `.env`, replacing the place holder with the actual api key.
 
-### Select the Kernel
-- Open the notebook in VS Code or Jupyter and choose the Python kernel that points to the `.venv` created by `uv sync`. This ensures the bot runs with the correct dependencies and environment variables loaded from `.env`.
 
-### Run the notebook
-- **VS Code**: Open [`wordle/wordle_starter_bot.ipynb`](wordle/wordle_starter_bot.ipynb) in the editor, select the `.venv` kernel, and run each cell sequentially with `Ctrl+Enter` (or the Run Cell buttons). The final cell starts the WebSocket listener and keeps running until you interrupt it.
-- **JupyterLab**: Launch JupyterLab via `uv run jupyter lab`, open the same notebook, choose the `.venv` kernel from the upper right, and run the cells from top to bottom.
+### Run the app
+
+Run command
+
+```bash
+uv run .\agents\wordle_agent_example.py
+```
 
 ### Explore OpenAI
 - Dive deeper into platform capabilities and model guidance in [OpenAI Bytes](https://spl.solitontech.ai/docs/learning/openai-bytes).
