@@ -342,14 +342,14 @@ class WordleAgent(BaseGameAgent):
         print("Exact positions:", self.exact_positions)
         if self.use_ai:
             if len(self.guess_history) == 3 or len(self.letters_exist) >= parsed.word_length - 1 or len(self.guess_history) >= 5:
-                words = await self._generate_words(1, parsed.word_length)
+                words = await self._generate_words(2, parsed.word_length)
                 if not words:
                     self.log("⚠️ AI guess failed; using fallback", "🔄")
                     fallback = self._fallback_guess(parsed)
                     self.log(f"✳️ Using fallback guess: {fallback}", "🔄")
                     return fallback
                 return words[0]
-            words = await self._generate_words(20, parsed.word_length)
+            words = await self._generate_words(5, parsed.word_length)
             if words:
                 guess = generate_word_no_repeats(words, banned=(self.letters_not_exist | set(self.letters_exist)))
                 return guess
@@ -407,7 +407,7 @@ if __name__ == "__main__":
     def create_wordle_agent():
         return WordleAgent(
             config=config,
-            ai_model="gpt-4o",
+            ai_model="gpt-4.1-mini",
             use_structured_output=True,
             use_ai=True,
         )

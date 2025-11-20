@@ -192,95 +192,95 @@ class AgentEvaluator:
             agent = self.agent_factory()
             mock_server = MockGameServer([word])
         
-        # Start game
-        game_start_msg = mock_server.start_game(word)
-        parsed_start = agent.parse_message(json.dumps(game_start_msg))
-        
-        if not parsed_start:
-            print("❌ Failed to parse game start message")
-            return EvaluationResult(word, False, 0, [], False)
-        
-        agent.handle_game_start(parsed_start)
-        
-        # Game loop
-        guesses = []
-        success = True
-        
-        try:
-            while mock_server.current_session.attempts_used < mock_server.current_session.max_attempts:
-                # Get first guess (simulate command message)
-                if not guesses:
-                    # First guess - send initial command
-                    command_msg = {
-                        "type": "command",
-                        "command": "guess",
-                        "matchId": mock_server.current_session.match_id,
-                        "gameId": mock_server.current_session.game_id,
-                        "otp": mock_server.current_session.otp,
-                        "wordLength": mock_server.current_session.word_length,
-                        "maxAttempts": mock_server.current_session.max_attempts,
-                        "currentAttempt": 1,
-                        "lastGuess": "",
-                        "lastResult": [],
-                    }
-                    parsed = agent.parse_message(json.dumps(command_msg))
+            # Start game
+            game_start_msg = mock_server.start_game(word)
+            parsed_start = agent.parse_message(json.dumps(game_start_msg))
+            
+            if not parsed_start:
+                print("❌ Failed to parse game start message")
+                return EvaluationResult(word, False, 0, [], False)
+            
+            agent.handle_game_start(parsed_start)
+            
+            # Game loop
+            guesses = []
+            success = True
+            
+            try:
+                while mock_server.current_session.attempts_used < mock_server.current_session.max_attempts:
+                    # Get first guess (simulate command message)
+                    if not guesses:
+                        # First guess - send initial command
+                        command_msg = {
+                            "type": "command",
+                            "command": "guess",
+                            "matchId": mock_server.current_session.match_id,
+                            "gameId": mock_server.current_session.game_id,
+                            "otp": mock_server.current_session.otp,
+                            "wordLength": mock_server.current_session.word_length,
+                            "maxAttempts": mock_server.current_session.max_attempts,
+                            "currentAttempt": 1,
+                            "lastGuess": "",
+                            "lastResult": [],
+                        }
+                        parsed = agent.parse_message(json.dumps(command_msg))
+                    else:
+                        # Send feedback from last guess
+                        command_msg = mock_server.process_guess(guesses[-1])
+                        parsed = agent.parse_message(json.dumps(command_msg))
+                    
+                    if not parsed:
+                        print("❌ Failed to parse message")
+                        success = False
+                        break
+                    
+                    # Get agent's guess
+                    guess = await agent.make_move(parsed)
+                    
+                    if not guess:
+                        print("❌ Agent failed to make a guess")
+                        success = False
+                        break
+                    
+                    guesses.append(guess)
+                    print(f"📝 Guess {len(guesses)}: {guess}")
+                    
+                    # Check if correct
+                    feedback = mock_server.calculate_feedback(guess)
+                    print(f"   Feedback: {' '.join(feedback)}")
+                    
+                    if all(f == "correct" for f in feedback):
+                        mock_server.current_session.won = True
+                        mock_server.current_session.attempts_used = len(guesses)
+                        break
+            
+            except Exception as e:
+                print(f"❌ Error during evaluation: {e}")
+                import traceback
+                traceback.print_exc()
+                success = False
+            
+            # End game
+            end_msg = mock_server.end_game()
+            parsed_end = agent.parse_message(json.dumps(end_msg))
+            if parsed_end:
+                agent.handle_game_result(parsed_end)
+            
+                result = EvaluationResult(
+                    word=word,
+                    won=mock_server.current_session.won,
+                    attempts=len(guesses),
+                    guesses=guesses,
+                    success=success,
+                )
+                
+                # Print result
+                if result.won:
+                    print(f"✅ WON in {result.attempts} attempts!")
                 else:
-                    # Send feedback from last guess
-                    command_msg = mock_server.process_guess(guesses[-1])
-                    parsed = agent.parse_message(json.dumps(command_msg))
+                    print(f"❌ LOST - Failed to guess '{word}' in {result.attempts} attempts")
                 
-                if not parsed:
-                    print("❌ Failed to parse message")
-                    success = False
-                    break
-                
-                # Get agent's guess
-                guess = await agent.make_move(parsed)
-                
-                if not guess:
-                    print("❌ Agent failed to make a guess")
-                    success = False
-                    break
-                
-                guesses.append(guess)
-                print(f"📝 Guess {len(guesses)}: {guess}")
-                
-                # Check if correct
-                feedback = mock_server.calculate_feedback(guess)
-                print(f"   Feedback: {' '.join(feedback)}")
-                
-                if all(f == "correct" for f in feedback):
-                    mock_server.current_session.won = True
-                    mock_server.current_session.attempts_used = len(guesses)
-                    break
-        
-        except Exception as e:
-            print(f"❌ Error during evaluation: {e}")
-            import traceback
-            traceback.print_exc()
-            success = False
-        
-        # End game
-        end_msg = mock_server.end_game()
-        parsed_end = agent.parse_message(json.dumps(end_msg))
-        if parsed_end:
-            agent.handle_game_result(parsed_end)
-        
-            result = EvaluationResult(
-                word=word,
-                won=mock_server.current_session.won,
-                attempts=len(guesses),
-                guesses=guesses,
-                success=success,
-            )
-            
-            # Print result
-            if result.won:
-                print(f"✅ WON in {result.attempts} attempts!")
-            else:
-                print(f"❌ LOST - Failed to guess '{word}' in {result.attempts} attempts")
-            
-            return result
+                return result
     
     async def run_evaluation(self) -> Dict[str, Any]:
         """Run evaluation on all test words concurrently"""
@@ -364,9 +364,10 @@ async def run_evaluation_example():
     # Test words
     test_words = [
         "kanal", "apple", "world", "crane", "slate",
-        # "iring", "vibes", "happy", "comas", "colos",
-        # "loved", "frown", "glide", "plumb", "trick",
-        # "frost", "grape", "blush", "charm", "dwell",
+        "iring", "vibes", "happy", "comas", "colos",
+        "loved", "frown", "glide", "plumb", "trick",
+        "frost", "grape", "blush", "charm", "dwell",
+        "widow", "clods", "kanas", "felon"
     ]
     
     # Agent factory
@@ -383,7 +384,7 @@ async def run_evaluation_example():
         )
     
     # Run evaluation with max 5 concurrent games
-    evaluator = AgentEvaluator(create_agent, test_words, max_concurrent=5)
+    evaluator = AgentEvaluator(create_agent, test_words, max_concurrent=2)
     stats = await evaluator.run_evaluation()
     
     print(f"\n🎉 Evaluation complete!")
