@@ -288,7 +288,7 @@ class WordleAgent(BaseGameAgent):
                         "content": prompt,
                     }
                 ],
-                max_completion_tokens=150,
+                # max_completion_tokens=150,
             )
             words_str = response.choices[0].message.content.strip().lower()
             print(f"AI Response:\n{words_str}")
